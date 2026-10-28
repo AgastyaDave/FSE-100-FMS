@@ -1,0 +1,214 @@
+let page = "home";
+let cards = [];
+let first = null;
+let second = null;
+let pairs = 0;
+let wait = 0;
+
+function setup() {
+  createCanvas(800, 600);
+
+  let names = ["Koi", "Koi", "Flower", "Flower", "Stone", "Stone"];
+  names = shuffle(names);
+
+  for (let i = 0; i < 6; i++) {
+    cards.push({
+      x: 170 + (i % 3) * 230,
+      y: 180 + floor(i / 3) * 220,
+      name: names[i],
+      open: false,
+      matched: false
+    });
+  }
+}
+
+function draw() {
+  background(235, 230, 215);
+
+  if (page == "home") home();
+  if (page == "game") game();
+  if (page == "win") win();
+
+  if (wait > 0 && millis() > wait) {
+    first.open = false;
+    second.open = false;
+    first = null;
+    second = null;
+    wait = 0;
+  }
+}
+
+function home() {
+  background(65, 100, 75);
+
+  fill(255);
+  textAlign(CENTER);
+  textSize(45);
+  text("Quiet Garden", 400, 100);
+
+  fill(110, 160, 90);
+  rect(250, 180, 300, 60, 10);
+  rect(250, 280, 300, 60, 10);
+  rect(250, 380, 300, 60, 10);
+
+  fill(255);
+  textSize(20);
+  text("Catch Koi", 400, 217);
+  text("Stone Holes", 400, 317);
+  text("Match Memory", 400, 417);
+}
+
+function game() {
+  fill(45, 80, 60);
+  textAlign(CENTER);
+  textSize(32);
+  text("Match Memory", 400, 55);
+
+  fill(45, 80, 60);
+  rect(20, 20, 120, 40, 8);
+
+  fill(255);
+  textSize(14);
+  text("Back Home", 80, 45);
+
+  for (let c of cards) {
+    if (c.open || c.matched) {
+      fill(250);
+      stroke(100);
+      rect(c.x - 70, c.y - 80, 140, 160, 10);
+
+      fill(50);
+      noStroke();
+      textSize(20);
+      text(c.name, c.x, c.y);
+    } else {
+      fill(45, 85, 70);
+      stroke(255);
+      rect(c.x - 70, c.y - 80, 140, 160, 10);
+
+      fill(255);
+      textSize(35);
+      text("?", c.x, c.y);
+    }
+  }
+
+  fill(45, 80, 60);
+  noStroke();
+  textSize(18);
+  text("Pairs: " + pairs + "/3", 400, 570);
+}
+
+function win() {
+  background(65, 100, 75);
+
+  fill(255);
+  textAlign(CENTER);
+  textSize(45);
+  text("Great Job!", 400, 170);
+
+  textSize(20);
+  text("You matched all 3 pairs!", 400, 220);
+
+  fill(110, 160, 90);
+  rect(250, 280, 300, 60, 10);
+  rect(250, 370, 300, 60, 10);
+
+  fill(255);
+  text("Play Again", 400, 317);
+  text("Back to Home", 400, 407);
+}
+
+function mousePressed() {
+
+  if (page == "home") {
+    if (mouseX > 250 && mouseX < 550 &&
+        mouseY > 380 && mouseY < 440) {
+      page = "game";
+    }
+  }
+
+  else if (page == "game") {
+
+    if (mouseX > 20 && mouseX < 140 &&
+        mouseY > 20 && mouseY < 60) {
+      page = "home";
+      return;
+    }
+
+    if (wait > 0) return;
+
+    for (let c of cards) {
+
+      if (mouseX > c.x - 70 && mouseX < c.x + 70 &&
+          mouseY > c.y - 80 && mouseY < c.y + 80 &&
+          !c.open && !c.matched) {
+
+        c.open = true;
+
+        if (first == null) {
+          first = c;
+        }
+
+        else {
+          second = c;
+
+          if (first.name == second.name) {
+            first.matched = true;
+            second.matched = true;
+
+            pairs++;
+
+            first = null;
+            second = null;
+
+            if (pairs == 3) {
+              page = "win";
+            }
+          }
+
+          else {
+            wait = millis() + 800;
+          }
+        }
+
+        break;
+      }
+    }
+  }
+
+  else if (page == "win") {
+
+    if (mouseX > 250 && mouseX < 550 &&
+        mouseY > 280 && mouseY < 340) {
+      resetGame();
+      page = "game";
+    }
+
+    if (mouseX > 250 && mouseX < 550 &&
+        mouseY > 370 && mouseY < 430) {
+      resetGame();
+      page = "home";
+    }
+  }
+}
+
+function resetGame() {
+  pairs = 0;
+  first = null;
+  second = null;
+  wait = 0;
+  cards = [];
+
+  let names = ["Koi", "Koi", "Flower", "Flower", "Stone", "Stone"];
+  names = shuffle(names);
+
+  for (let i = 0; i < 6; i++) {
+    cards.push({
+      x: 170 + (i % 3) * 230,
+      y: 180 + floor(i / 3) * 220,
+      name: names[i],
+      open: false,
+      matched: false
+    });
+  }
+}
