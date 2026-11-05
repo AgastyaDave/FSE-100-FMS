@@ -1,0 +1,238 @@
+let screen = "home";
+let currentActivity = "";
+
+let homeButton, homeButton2, homeButton3;
+let nextButton, backButton;
+let instructionText = "";
+
+// Catch the Koi state
+let koiCaught = 0;
+let koiTarget = 10;
+let koiTimer = 0;
+let koiTimerRunning = false;
+
+const activities = {
+  "Catch the Koi": {
+    description:
+      "Move your mouse to catch the koi as it swims across the pond. Try to catch as many as you can!",
+  },
+  "Stone Holes!!": {
+    description:
+      "Drop stones into the holes to fill them. Watch your aim carefully!",
+  },
+  "Match Memory": {
+    description:
+      "Flip two cards at a time and try to find all the matching pairs in the fewest moves.",
+  },
+};
+
+function setup() {
+  createCanvas(400, 400);
+  textFont("Courier New");
+
+  homeButton = createButton("Catch the Koi");
+  homeButton.position(150, 180);
+  homeButton.mousePressed(() => showInstructions("Catch the Koi"));
+
+  homeButton2 = createButton("Stone Holes!!");
+  homeButton2.position(150, 210);
+  homeButton2.mousePressed(() => showInstructions("Stone Holes!!"));
+
+  homeButton3 = createButton("Match Memory");
+  homeButton3.position(150, 240);
+  homeButton3.mousePressed(() => showInstructions("Match Memory"));
+
+  nextButton = createButton("Next ▶");
+  nextButton.position(150, 320);
+  nextButton.mousePressed(startActivity);
+
+  backButton = createButton("◀ Back");
+  backButton.position(20, 370);
+  backButton.mousePressed(goHome);
+}
+
+function showInstructions(activityName) {
+  currentActivity = activityName;
+  instructionText = activities[activityName].description;
+  screen = "instructions";
+}
+
+function startActivity() {
+  screen = currentActivity;
+  if (currentActivity === "Catch the Koi") {
+    koiCaught = 0;
+    koiTimer = 0;
+    koiTimerRunning = true;
+    koiStartTime = millis();   // ← add this line here
+  }
+}  
+
+function goHome() {
+  screen = "home";
+  koiTimerRunning = false;
+}
+
+function draw() {
+  background(34, 139, 34);
+
+  if (screen === "home") {
+    drawHome();
+  } else if (screen === "instructions") {
+    drawInstructions();
+  } else {
+    drawActivity();
+  }
+}
+
+function drawHome() {
+  textSize(30);
+  fill(255);
+  text("Quiet Garden", 110, 140);
+
+  homeButton.show();
+  homeButton2.show();
+  homeButton3.show();
+  nextButton.hide();
+  backButton.hide();
+
+  noStroke();
+  fill(255, 255, 255, 150);
+  ellipse(mouseX, mouseY, 50, 50);
+}
+
+function drawInstructions() {
+  homeButton.hide();
+  homeButton2.hide();
+  homeButton3.hide();
+  nextButton.show();
+  backButton.show();
+
+  textSize(24);
+  fill(255);
+  text(currentActivity, 60, 80);
+
+  stroke(255);
+  line(50, 95, 350, 95);
+  noStroke();
+
+  textSize(16);
+  fill(255, 255, 255, 220);
+  text(instructionText, 50, 130, 300, 150);
+}
+
+function drawActivity() {
+  nextButton.hide();
+  backButton.show();
+
+  if (currentActivity === "Catch the Koi") {
+    drawCatchTheKoi();
+  } else if (currentActivity === "Stone Holes!!") {
+    drawStoneHoles();
+  } else if (currentActivity === "Match Memory") {
+    drawMatchMemory();
+  }
+}
+
+// ─── CATCH THE KOI ───────────────────────────────────────────────
+function drawCatchTheKoi() {
+  // Update timer
+  if (koiTimerRunning) {
+    koiTimer = millis() - koiStartTime; // will be set on start
+  }
+
+  // Koi position
+  let koiX = 200 + 150 * cos(frameCount * 0.03);
+  let koiY = 200 + 100 * sin(frameCount * 0.04);
+
+  // Draw koi
+  fill(255, 140, 0);
+  noStroke();
+  ellipse(koiX, koiY, 40, 25);
+
+  // Check if koi is caught (mouse clicked near koi)
+  if (mouseIsPressed) {
+    let d = dist(mouseX, mouseY, koiX, koiY);
+    if (d < 30 && koiCaught < koiTarget) {
+      koiCaught++;
+      if (koiCaught >= koiTarget) {
+        koiTimerRunning = false; // stop timer on win
+        let koiStartTime;   
+      }
+    }
+  }
+
+  // ── Timer display ──
+  let seconds = floor(koiTimer / 1000);
+  let ms = floor((koiTimer % 1000) / 10); // tenths
+  textSize(16);
+  fill(255);
+  text("Time: " + seconds + "." + ms + "s", 10, 25);
+
+  // ── Progress bar ──
+  let barX = 120, barY = 12, barW = 200, barH = 16;
+  // Background
+  fill(0, 0, 0, 100);
+  rect(barX, barY, barW, barH, 4);
+  // Fill
+  let progress = koiCaught / koiTarget;
+  fill(255, 200, 0);
+  rect(barX, barY, barW * progress, barH, 4);
+  // Border
+  noFill();
+  stroke(255);
+  strokeWeight(1);
+  rect(barX, barY, barW, barH, 4);
+  noStroke();
+  // Label
+  fill(255);
+  textSize(12);
+  text(koiCaught + "/" + koiTarget, barX + barW / 2 - 15, barY + 12);
+
+  // Win message
+  if (koiCaught >= koiTarget) {
+    textSize(22);
+    fill(255, 255, 0);
+    textAlign(CENTER);
+    text("You caught them all! 🎉", 200, 350);
+    textAlign(LEFT);
+  }
+}
+
+function mousePressed() {
+  // Only handle koi catching when on that screen
+  if (screen === "Catch the Koi" && koiCaught < koiTarget) {
+    let koiX = 200 + 150 * cos(frameCount * 0.03);
+    let koiY = 200 + 100 * sin(frameCount * 0.04);
+    let d = dist(mouseX, mouseY, koiX, koiY);
+    if (d < 30) {
+      koiCaught++;
+    }
+  }
+}
+
+// ─── OTHER ACTIVITIES ────────────────────────────────────────────
+function drawStoneHoles() {
+  textSize(20);
+  fill(255);
+  text("Playing: Stone Holes!!", 60, 80);
+
+  fill(80, 60, 40);
+  noStroke();
+  ellipse(100, 250, 60, 40);
+  ellipse(200, 250, 60, 40);
+  ellipse(300, 250, 60, 40);
+}
+
+function drawMatchMemory() {
+  textSize(20);
+  fill(255);
+  text("Playing: Match Memory", 60, 80);
+
+  fill(200, 200, 255);
+  noStroke();
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      rect(60 + i * 70, 120 + j * 55, 60, 45, 8);
+    }
+  }
+}   
