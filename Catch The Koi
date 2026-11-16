@@ -10,6 +10,7 @@ let koiCaught = 0;
 let koiTarget = 10;
 let koiTimer = 0;
 let koiTimerRunning = false;
+let koiStartTime = 0;   // ← declare it here
 
 const activities = {
   "Catch the Koi": {
@@ -137,26 +138,24 @@ function drawActivity() {
 function drawCatchTheKoi() {
   // Update timer
   if (koiTimerRunning) {
-    koiTimer = millis() - koiStartTime; // will be set on start
+    koiTimer = millis() - koiStartTime; // set on start
   }
+
+  drawPond();
 
   // Koi position
   let koiX = 200 + 150 * cos(frameCount * 0.03);
   let koiY = 200 + 100 * sin(frameCount * 0.04);
 
-  // Draw koi
-  fill(255, 140, 0);
-  noStroke();
-  ellipse(koiX, koiY, 40, 25);
+  drawKoi(koiX, koiY);
 
-  // Check if koi is caught (mouse clicked near koi)
+  // Check if koi is caught (mouse held near koi)
   if (mouseIsPressed) {
     let d = dist(mouseX, mouseY, koiX, koiY);
     if (d < 30 && koiCaught < koiTarget) {
       koiCaught++;
       if (koiCaught >= koiTarget) {
         koiTimerRunning = false; // stop timer on win
-        let koiStartTime;   
       }
     }
   }
@@ -170,20 +169,16 @@ function drawCatchTheKoi() {
 
   // ── Progress bar ──
   let barX = 120, barY = 12, barW = 200, barH = 16;
-  // Background
   fill(0, 0, 0, 100);
   rect(barX, barY, barW, barH, 4);
-  // Fill
   let progress = koiCaught / koiTarget;
   fill(255, 200, 0);
   rect(barX, barY, barW * progress, barH, 4);
-  // Border
   noFill();
   stroke(255);
   strokeWeight(1);
   rect(barX, barY, barW, barH, 4);
   noStroke();
-  // Label
   fill(255);
   textSize(12);
   text(koiCaught + "/" + koiTarget, barX + barW / 2 - 15, barY + 12);
@@ -198,8 +193,120 @@ function drawCatchTheKoi() {
   }
 }
 
+// ─── POND BACKGROUND ─────────────────────────────────────────────
+function drawPond() {
+  // Water base
+  noStroke();
+  fill(30, 100, 140);
+  rect(0, 0, width, height);
+
+  // Depth gradient (lighter in the middle where the koi swims)
+  for (let i = 0; i < 6; i++) {
+    fill(60, 150, 180, 25);
+    ellipse(200, 200, 380 - i * 55, 300 - i * 45);
+  }
+
+  // Moving light shimmer on the surface
+  for (let i = 0; i < 5; i++) {
+    let rx = 200 + 150 * cos(frameCount * 0.01 + i * 1.7);
+    let ry = 200 + 110 * sin(frameCount * 0.013 + i * 2.3);
+    noFill();
+    stroke(255, 255, 255, 40);
+    strokeWeight(2);
+    ellipse(rx, ry, 40 + i * 12, 14 + i * 5);
+  }
+  noStroke();
+
+  // Lily pads (fixed positions so they don't jitter)
+  lilyPad(60, 90, 34);
+  lilyPad(330, 120, 28);
+  lilyPad(70, 320, 30);
+  lilyPad(320, 310, 36);
+
+  // Reeds along the edges
+  reed(15, height);
+  reed(30, height);
+  reed(width - 20, height);
+  reed(width - 35, height);
+}
+
+function lilyPad(x, y, r) {
+  push();
+  translate(x, y);
+  // Pad with a notch cut out
+  fill(40, 130, 60);
+  arc(0, 0, r * 2, r * 1.6, 0.3, TWO_PI - 0.3, PIE);
+  // Highlight
+  fill(90, 180, 100, 120);
+  ellipse(-r * 0.25, -r * 0.2, r * 0.7, r * 0.4);
+  // Occasional blossom
+  if (r > 32) {
+    fill(255, 190, 220);
+    for (let p = 0; p < 5; p++) {
+      let a = p * (TWO_PI / 5);
+      ellipse(cos(a) * 6, sin(a) * 4 - 4, 8, 8);
+    }
+    fill(255, 230, 120);
+    ellipse(0, -4, 6, 6);
+  }
+  pop();
+}
+
+function reed(x, baseY) {
+  push();
+  noFill();
+  stroke(30, 110, 50);
+  strokeWeight(3);
+  let sway = sin(frameCount * 0.02 + x) * 4;
+  bezier(x, baseY, x + sway, baseY - 40, x + sway * 2, baseY - 70, x + sway * 2, baseY - 95);
+  // Cattail top
+  noStroke();
+  fill(110, 70, 40);
+  ellipse(x + sway * 2, baseY - 100, 8, 22);
+  pop();
+}
+
+// ─── KOI SPRITE ──────────────────────────────────────────────────
+function drawKoi(x, y) {
+  // Face the direction it's swimming
+  let dir = cos(frameCount * 0.03 + HALF_PI) >= 0 ? 1 : -1;
+
+  push();
+  translate(x, y);
+  scale(dir, 1);
+
+  // Tail (static, no wiggle)
+  fill(255, 140, 0);
+  triangle(-18, 0, -34, -10, -34, 10);
+
+  // Body
+  fill(255, 140, 0);
+  ellipse(0, 0, 40, 25);
+
+  // White belly patch
+  fill(255, 255, 255, 220);
+  ellipse(2, 3, 22, 12);
+
+  // Black spots
+  fill(40, 40, 40);
+  ellipse(-6, -4, 9, 7);
+  ellipse(8, -2, 6, 5);
+
+  // Eye
+  fill(0);
+  ellipse(15, -3, 4, 4);
+
+  pop();
+}
+
 function mousePressed() {
-  // Only handle koi catching when on that screen
+  // Double-click: show instructions for current activity
+  if (mouseCount === 2 && screen === "Catch the Koi") {
+    showInstructions("Catch the Koi");
+    return;
+  }
+
+  // Single-click: only handle koi catching when on that screen
   if (screen === "Catch the Koi" && koiCaught < koiTarget) {
     let koiX = 200 + 150 * cos(frameCount * 0.03);
     let koiY = 200 + 100 * sin(frameCount * 0.04);
